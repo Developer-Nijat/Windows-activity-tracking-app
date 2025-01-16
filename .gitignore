@@ -1,5 +1,6 @@
 # Logs
 logs/
+credentials/
 
 # Python virtual environment
 venv/
@@ -11,3 +12,6 @@ __pycache__/
 # System files
 .DS_Store
 Thumbs.db
+
+# OTHER
+reset_code.txt
