@@ -48,6 +48,7 @@ This application is designed to track and log file system changes, active window
 - **Directory Structure**:
   - Logs are stored in a hierarchical format by year, month, and day.
   - Credentials are stored securely in a dedicated folder.
+  - Default monitoring folder path is `C:/Users/Public`
 
 ### How to Use
 
