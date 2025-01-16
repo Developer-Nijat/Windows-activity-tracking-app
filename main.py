@@ -1,6 +1,7 @@
 import os
 import time
 import logging
+import threading
 # import secrets
 import random
 import string
@@ -16,6 +17,8 @@ from datetime import datetime, timedelta
 import hashlib
 
 RESET_CODE_FILE = "reset_code.txt"
+CONFIG_FILE = "config.txt"
+DEFAULT_PATH = "C:/Users/Public"
 
 # ---------------------------
 # Utility Functions
@@ -82,6 +85,43 @@ def reset_password(username, new_password, root):
     save_credentials(username, new_password)
     messagebox.showinfo("Success", "Password reset successful!")
     root.destroy()
+
+def load_folder_path():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, "r") as file:
+            config_data = file.read().strip()
+            if config_data:
+                return config_data
+            else:
+                save_folder_path(DEFAULT_PATH)
+                return DEFAULT_PATH
+    else:
+        # Create a config file with the default path
+        save_folder_path(DEFAULT_PATH)
+        return DEFAULT_PATH
+
+def save_folder_path(path):
+    with open(CONFIG_FILE, "w") as file:
+        file.write(path)
+
+def start_file_tracking(path_to_monitor):
+    event_handler = FileEventHandler()
+    observer = Observer()
+    observer.schedule(event_handler, path=path_to_monitor, recursive=True)
+    observer.start()
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+    observer.join()
+
+def open_main_app(root):
+    root.destroy()
+    main_root = tk.Tk()
+    EventDisplayApp(main_root)
+    main_root.mainloop()
+
 # ---------------------------
 # Login Screen
 # ---------------------------
@@ -184,13 +224,6 @@ def setup_login(root):
         
         root.mainloop()
         return
-
-# Helper Function to Open the Main App
-def open_main_app(root):
-    root.destroy()
-    main_root = tk.Tk()
-    EventDisplayApp(main_root)
-    main_root.mainloop()
     
 # ---------------------------
 # File Event Handler
@@ -297,19 +330,24 @@ class EventDisplayApp:
         button_frame.pack(fill=tk.X, pady=10)
 
         self.refresh_button = tk.Button(
-            button_frame, text="Refresh Log", command=self.refresh_log, width=20, bg="#0078D7", fg="white", font=("Arial", 10, "bold")
+            button_frame, text="Refresh Log", command=self.refresh_log, width=20, bg="#757373", fg="white", font=("Arial", 10, "bold")
         )
         self.refresh_button.pack(side=tk.LEFT, padx=5)
 
         self.view_file_button = tk.Button(
-            button_frame, text="View Last Edited File", command=self.view_file, width=20, bg="#28a745", fg="white", font=("Arial", 10, "bold")
+            button_frame, text="View Last Edited File", command=self.view_file, width=20, bg="#757373", fg="white", font=("Arial", 10, "bold")
         )
         self.view_file_button.pack(side=tk.LEFT, padx=5)
 
         self.select_folder_button = tk.Button(
-            button_frame, text="Select Log Folder", command=self.select_log_folder, width=20, bg="#ffc107", fg="#333", font=("Arial", 10, "bold")
+            button_frame, text="Select Log Folder", command=self.select_log_folder, width=20, bg="#757373", fg="white", font=("Arial", 10, "bold")
         )
         self.select_folder_button.pack(side=tk.LEFT, padx=5)
+        
+        self.select_folder_tracking_button = tk.Button(
+            button_frame, text="Setup Tracking Folder", command=self.select_tracking_folder, width=20, bg="#757373", fg="white", font=("Arial", 10, "bold")
+        )
+        self.select_folder_tracking_button.pack(side=tk.LEFT, padx=5)
 
         # Status bar
         self.status_var = tk.StringVar(value="Ready")
@@ -368,6 +406,19 @@ class EventDisplayApp:
         if folder_path:
             self.load_logs_from_folder(folder_path)
 
+    def select_tracking_folder(self):
+        folder = filedialog.askdirectory(title="Select Folder to Monitor")
+        if folder:
+            current_path_var = tk.StringVar(value=load_folder_path())
+            current_path_var.set(folder)
+            save_folder_path(folder)
+            threading.Thread(target=start_file_tracking, args=(folder,), daemon=True).start()
+            messagebox.showinfo("Monitoring Folder Updated", f"Monitoring folder set to: {folder}")
+            return folder
+        else:
+            messagebox.showwarning("No Folder Selected", "Please select a folder to monitor.")
+            return None
+    
     def load_logs_from_folder(self, folder_path):
         self.textbox.delete(1.0, tk.END)
         logs_found = False
@@ -387,20 +438,8 @@ class EventDisplayApp:
         self.set_status(f"Logs loaded from: {folder_path}")
 
 # ----------------------
-# Main Function
+# Main Functions
 # ----------------------
-
-def start_file_tracking(path_to_monitor):
-    event_handler = FileEventHandler()
-    observer = Observer()
-    observer.schedule(event_handler, path=path_to_monitor, recursive=True)
-    observer.start()
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        observer.stop()
-    observer.join()
 
 def run_gui():
     root = tk.Tk()
@@ -409,8 +448,8 @@ def run_gui():
         return
 
 if __name__ == "__main__":
-    path_to_monitor = 'C:/Nijat/3.Documents'
-    import threading
+    path_to_monitor = load_folder_path()
+    
     threading.Thread(target=start_file_tracking, args=(path_to_monitor,), daemon=True).start()
     threading.Thread(target=track_active_window, daemon=True).start()
     threading.Thread(target=create_system_tray_icon, daemon=True).start()
