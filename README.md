@@ -80,7 +80,9 @@ This application is designed to track and log file system changes, active window
 ### Author
 **Nijat Aliyev**  
 GitHub: [@Developer-Nijat](https://github.com/Developer-Nijat) 
+
 Website: [aliyev.dev](https://aliyev.dev)
+
 YouTube: [@developer_nijat](https://www.youtube.com/@developer_nijat)
 
 Feel free to customize this description further to suit your needs!
