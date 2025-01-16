@@ -266,31 +266,64 @@ def create_system_tray_icon():
 class EventDisplayApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("Event Tracker")
+        self.root.title("Event Tracker by Nijat Aliyev (@developer.nijat)")
 
+        # Set window size
         screen_width = self.root.winfo_screenwidth()
         screen_height = self.root.winfo_screenheight()
         window_width = int(screen_width * 0.8)
         window_height = int(screen_height * 0.8)
         self.root.geometry(f"{window_width}x{window_height}")
+        self.root.minsize(800, 600)
 
-        self.textbox = tk.Text(root, width=150, height=40)
-        self.textbox.pack()
+        # Main frame
+        main_frame = tk.Frame(root, padx=10, pady=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
 
-        self.refresh_button = tk.Button(root, text="Refresh Log", command=self.refresh_log)
-        self.refresh_button.pack()
+        # Textbox for log display
+        self.textbox = tk.Text(
+            main_frame,
+            wrap=tk.WORD,
+            font=("Courier", 12),
+            bg="#f5f5f5",
+            fg="#333",
+            relief=tk.SUNKEN,
+            bd=2
+        )
+        self.textbox.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
 
-        self.view_file_button = tk.Button(root, text="View Last Edited File", command=self.view_file)
-        self.view_file_button.pack()
+        # Button frame
+        button_frame = tk.Frame(main_frame)
+        button_frame.pack(fill=tk.X, pady=10)
 
-        self.select_folder_button = tk.Button(root, text="Select Log Folder", command=self.select_log_folder)
-        self.select_folder_button.pack()
+        self.refresh_button = tk.Button(
+            button_frame, text="Refresh Log", command=self.refresh_log, width=20, bg="#0078D7", fg="white", font=("Arial", 10, "bold")
+        )
+        self.refresh_button.pack(side=tk.LEFT, padx=5)
 
+        self.view_file_button = tk.Button(
+            button_frame, text="View Last Edited File", command=self.view_file, width=20, bg="#28a745", fg="white", font=("Arial", 10, "bold")
+        )
+        self.view_file_button.pack(side=tk.LEFT, padx=5)
+
+        self.select_folder_button = tk.Button(
+            button_frame, text="Select Log Folder", command=self.select_log_folder, width=20, bg="#ffc107", fg="#333", font=("Arial", 10, "bold")
+        )
+        self.select_folder_button.pack(side=tk.LEFT, padx=5)
+
+        # Status bar
+        self.status_var = tk.StringVar(value="Ready")
+        self.status_bar = tk.Label(root, textvariable=self.status_var, bd=1, relief=tk.SUNKEN, anchor="w", bg="#ddd", fg="#555")
+        self.status_bar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        # Initial load
         self.refresh_log()
+
+    def set_status(self, message):
+        self.status_var.set(message)
 
     def refresh_log(self):
         self.textbox.delete(1.0, tk.END)
-
         current_date = datetime.now()
         year = current_date.year
         month = current_date.month
@@ -308,6 +341,8 @@ class EventDisplayApp:
             log_content.reverse()
             self.textbox.insert(tk.END, ''.join(log_content))
 
+        self.set_status(f"Logs refreshed from: {log_file}")
+
     def view_file(self):
         file_path = filedialog.askopenfilename(title="Open File")
         if file_path:
@@ -315,15 +350,17 @@ class EventDisplayApp:
                 with open(file_path, 'r') as file:
                     content = file.read()
                     self.show_file_content(content)
+                self.set_status(f"Opened file: {file_path}")
             except Exception as e:
-                print(f"Error reading file: {e}")
+                messagebox.showerror("Error", f"Failed to read file: {e}")
 
     def show_file_content(self, content):
         file_window = tk.Toplevel(self.root)
         file_window.title("File Content")
+        file_window.geometry("600x400")
 
-        textbox = tk.Text(file_window, width=80, height=20)
-        textbox.pack()
+        textbox = tk.Text(file_window, wrap=tk.WORD, font=("Courier", 11), bg="#f9f9f9", fg="#333")
+        textbox.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
         textbox.insert(tk.END, content)
 
     def select_log_folder(self):
@@ -345,7 +382,9 @@ class EventDisplayApp:
                 logs_found = True
 
         if not logs_found:
-            self.textbox.insert(tk.END, "No logs found for the selected date.\n")
+            self.textbox.insert(tk.END, "No logs found for the selected folder.\n")
+
+        self.set_status(f"Logs loaded from: {folder_path}")
 
 # ----------------------
 # Main Function
